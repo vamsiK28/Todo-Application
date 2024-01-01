@@ -29,6 +29,58 @@ const initializeDBAndServer = async () => {
 
 initializeDBAndServer();
 
+const checkObjectValidity = (request, response, next) => {
+  let {
+    priority = "",
+    status = "",
+    category = "",
+    dueDate = "",
+  } = request.body;
+  let date = dueDate;
+  //console.log(status);
+  if (priority !== "") {
+    //console.log(5);
+    if (priority !== "HIGH" && priority !== "LOW" && priority !== "MEDIUM") {
+      response.status(400);
+      //console.log(1);
+      response.send("Invalid Todo Priority");
+      return;
+    }
+  }
+  if (status !== "") {
+    // console.log(5);
+    if (status !== "TO DO" && status !== "IN PROGRESS" && status !== "DONE") {
+      response.status(400);
+      response.send("Invalid Todo Status");
+      return;
+    }
+  }
+  if (category !== "") {
+    if (category !== "WORK" && category !== "HOME" && category !== "LEARNING") {
+      response.status(400);
+      response.send("Invalid Todo Category");
+      return;
+    }
+  }
+  if (dueDate !== "") {
+    let parts = dueDate.split("-");
+    let y = parseInt(parts[0]),
+      m = parseInt(parts[1]),
+      d = parseInt(parts[2]);
+    let nd = new Date(y, m - 1, d);
+    if (isValid(new Date(y, m - 1, d))) {
+      let day = format(nd, "yyyy-MM-dd");
+      request.dueDateValue = day;
+    } else {
+      response.status(400);
+      response.send("Invalid Due Date");
+      return;
+    }
+  }
+  //console.log(20);
+  next();
+};
+
 const checkParameterValidity = (request, response, next) => {
   const {
     priority = "",
@@ -36,11 +88,13 @@ const checkParameterValidity = (request, response, next) => {
     status = "",
     category = "",
     date = "",
+    dueDate = "",
   } = request.query;
   if (priority !== "") {
     //console.log(5);
     if (priority !== "HIGH" && priority !== "LOW" && priority !== "MEDIUM") {
       response.status(400);
+
       response.send("Invalid Todo Priority");
     } else {
       next();
@@ -76,6 +130,20 @@ const checkParameterValidity = (request, response, next) => {
       //console.log(122);
       let dueDate = format(nd, "yyyy-MM-dd");
       request.dueDateValue = dueDate;
+      next();
+    } else {
+      response.status(400);
+      response.send("Invalid Due Date");
+    }
+  } else if (dueDate !== "") {
+    let parts = dueDate.split("-");
+    let y = parseInt(parts[0]),
+      m = parseInt(parts[1]),
+      d = parseInt(parts[2]);
+    let nd = new Date(y, m - 1, d);
+    if (isValid(new Date(y, m - 1, d))) {
+      let day = format(nd, "yyyy-MM-dd");
+      request.dueDateValue = day;
       next();
     } else {
       response.status(400);
@@ -133,19 +201,25 @@ app.get("/agenda/", checkParameterValidity, async (request, response) => {
   response.send(result);
 });
 
-app.post("/todos/", checkParameterValidity, async (request, response) => {
-  const { id, todo, priority, status, category, dueDate } = request.body;
-  const postTodoQuery = `
+app.post(
+  "/todos/",
+  checkParameterValidity,
+  checkObjectValidity,
+  async (request, response) => {
+    const { id, todo, priority, status, category, dueDate } = request.body;
+    const postTodoQuery = `
     INSERT INTO todo (id,todo,priority,status,category,due_date)
     VALUES (${id},'${todo}','${priority}','${status}','${category}','${dueDate}');
     `;
-  const result = await db.get(postTodoQuery);
-  response.send("Todo Successfully Added");
-});
+    const result = await db.run(postTodoQuery);
+    response.send("Todo Successfully Added");
+  }
+);
 
 app.put(
   "/todos/:todoId/",
   checkParameterValidity,
+  checkObjectValidity,
   async (request, response) => {
     const { todoId } = request.params;
     const {
@@ -171,7 +245,7 @@ app.put(
       updateValue = category;
     } else if (dueDate !== "") {
       updateField = "due_date";
-      updateValue = dueDate;
+      updateValue = request.dueDateValue;
     }
     const updateTodoQuery = `
     UPDATE todo

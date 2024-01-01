@@ -1,4 +1,6 @@
 ###
+HI There
+###
 GET http://localhost:3000/todos/?status=TO%20DO
 
 ###
@@ -16,7 +18,7 @@ GET http://localhost:3000/todos/?category=WORK&status=DONE
 GET http://localhost:3000/todos/?category=HOME
 ###
 
-GET http://localhost:3000/todos/7/
+GET http://localhost:3000/todos/20/
 ###
 
 GET http://localhost:3000/agenda/?date=2021-4-2
@@ -26,18 +28,18 @@ POST http://localhost:3000/todos/
 Content-Type: application/json
 
 {
- "id": 7,
- "todo": "Finalize event theme",
- "priority": "LOW",
+ "id": 20,
+ "todo": "Start discussion about nukes",
+ "priority": "MEDIUM",
  "status": "TO DO",
- "category": "HOME",
+ "category": "WORK",
  "dueDate": "2021-02-22"
 }
 
 ###
-PUT http://localhost:3000/todos/10/
+PUT http://localhost:3000/todos/19/
 Content-Type: application/json
 
-{"status":"Done"}
+{"status":"TO DO"}
 ###
 DELETE http://localhost:3000/todos/6/
